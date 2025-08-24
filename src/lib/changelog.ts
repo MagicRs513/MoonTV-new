@@ -11,6 +11,64 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "2.3.6",
+    date: "2025-08-24",
+    added: [
+      // 无新增内容
+    ],
+    changed: [
+    "优化播放优选换源"
+    ],
+    fixed: [
+    "修复播放视频源缓存"
+    ]
+  },
+  {
+    version: "2.3.4",
+    date: "2025-08-24",
+    added: [
+      // 无新增内容
+    ],
+    changed: [
+      // 无变更内容
+    ],
+    fixed: [
+    "修复管理功能不生效",
+    "修复netlify无法部署",
+    "修复非本地数据库初始化"
+    ]
+  },
+  {
+    version: "2.3.1",
+    date: "2025-08-23",
+    added: [
+      // 无新增内容
+    ],
+    changed: [
+      // 无变更内容
+    ],
+    fixed: [
+    "修复配置文件不生效",
+    "修复无config.json文件报错",
+    "修复失败源不准确"
+    ]
+  },
+  {
+    version: "2.2.8",
+    date: "2025-08-22",
+    added: [
+      // 无新增内容
+    ],
+    changed: [
+    "转移视频源优选按钮至播放页面"
+    ],
+    fixed: [
+    "优化播放换源",
+    "优化失败源显示逻辑",
+    "修复搜索路由问题"
+    ]
+  },
+  {
     version: "2.2.1",
     date: "2025-08-22",
     added: [

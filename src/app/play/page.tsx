@@ -166,21 +166,6 @@ function PlayPageClient() {
     null
   );
 
-  // 优选和测速开关
-  const [optimizationEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('enableOptimization');
-      if (saved !== null) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          /* ignore */
-        }
-      }
-    }
-    return true;
-  });
-
   // 保存优选时的测速结果，避免EpisodeSelector重复测速
   const [precomputedVideoInfo, setPrecomputedVideoInfo] = useState<
     Map<string, { quality: string; loadSpeed: string; pingTime: number }>
@@ -193,7 +178,7 @@ function PlayPageClient() {
   // 换源加载状态
   const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [videoLoadingStage, setVideoLoadingStage] = useState<
-    'initing' | 'sourceChanging'
+    'initing' | 'sourceChanging' | 'optimizing'
   >('initing');
 
   // 播放进度保存相关
@@ -723,16 +708,10 @@ function PlayPageClient() {
     
         if (cached) {
           parsed = JSON.parse(cached) as CachedResult;
-          // 判断 timestamp 是否过期，同时检查 results 中的 id 是否一致
-          const idsMatch = parsed.results.every((item, index) => item.title === videoTitle);
-          if (idsMatch) {
-            aggregatedResults = [...parsed.results];
-            setAvailableSources(aggregatedResults);
-            setSourceSearchLoading(false);
-            onResult?.(parsed.results); // 先回调缓存
-          } else {
-            parsed.reSearch = true; // 用对象标记
-          }
+          aggregatedResults = [...parsed.results];
+          setAvailableSources(aggregatedResults);
+          setSourceSearchLoading(false);
+          onResult?.(parsed.results);
         }
     
         // 2. 发起流式搜索请求
@@ -1048,6 +1027,15 @@ function PlayPageClient() {
       newUrl.searchParams.set('year', newDetail.year);
       window.history.replaceState({}, '', newUrl.toString());
 
+      // 在更新视频源之前销毁当前播放器实例
+      if (artPlayerRef.current) {
+        if (artPlayerRef.current.video && artPlayerRef.current.video.hls) {
+          artPlayerRef.current.video.hls.destroy();
+        }
+        artPlayerRef.current.destroy();
+        artPlayerRef.current = null;
+      }
+
       setVideoTitle(newDetail.title || newTitle);
       setVideoYear(newDetail.year);
       setVideoCover(newDetail.poster);
@@ -1056,6 +1044,11 @@ function PlayPageClient() {
       setCurrentId(newId);
       setDetail(newDetail);
       setCurrentEpisodeIndex(targetIndex);
+
+      // 设置一个短暂的延时，确保DOM已更新
+      setTimeout(() => {
+        setIsVideoLoading(false);
+      }, 100);
     } catch (err) {
       // 隐藏换源加载状态
       setIsVideoLoading(false);
@@ -2062,6 +2055,8 @@ function PlayPageClient() {
                         <p className='text-xl font-semibold text-white animate-pulse'>
                           {videoLoadingStage === 'sourceChanging'
                             ? '🔄 切换播放源...'
+                            : videoLoadingStage === 'optimizing'
+                            ? '⚡ 优选播放源...'
                             : '🔄 视频加载中...'}
                         </p>
                       </div>
@@ -2092,6 +2087,10 @@ function PlayPageClient() {
                 sourceSearchLoading={sourceSearchLoading}
                 sourceSearchError={sourceSearchError}
                 precomputedVideoInfo={precomputedVideoInfo}
+                preferBestSource={preferBestSource}
+                setLoading={setLoading}
+                setIsVideoLoading={setIsVideoLoading}
+                setVideoLoadingStage={setVideoLoadingStage}
               />
             </div>
           </div>
